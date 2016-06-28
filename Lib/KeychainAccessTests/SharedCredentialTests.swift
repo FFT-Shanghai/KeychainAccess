@@ -21,20 +21,20 @@ class SharedCredentialTests: XCTestCase {
 
     func testGetSharedPassword() {
         do {
-            let expectation = expectationWithDescription("getSharedPassword")
+            let ex = expectation(withDescription: "getSharedPassword")
 
             let keychain = Keychain(server: "https://kishikawakatsumi.com", protocolType: .HTTPS)
 
-            keychain.getSharedPassword("kishikawakatsumi") { (password, error) -> () in
+            keychain.getSharedPassword(account: "kishikawakatsumi") { (password, error) -> () in
                 XCTAssertNil(password)
                 XCTAssertNotNil(error)
-                expectation.fulfill()
+                ex.fulfill()
             }
 
-            waitForExpectationsWithTimeout(10.0, handler: nil)
+            waitForExpectations(withTimeout: 10.0, handler: nil)
         }
         do {
-            let expectation = expectationWithDescription("getSharedPassword")
+            let ex = expectation(withDescription: "getSharedPassword")
 
             let keychain = Keychain(server: "https://kishikawakatsumi.com", protocolType: .HTTPS)
 
@@ -42,10 +42,10 @@ class SharedCredentialTests: XCTestCase {
                 XCTAssertNil(account)
                 XCTAssertNil(password)
                 XCTAssertNotNil(error)
-                expectation.fulfill()
+                ex.fulfill()
             }
 
-            waitForExpectationsWithTimeout(10.0, handler: nil)
+            waitForExpectations(withTimeout: 10.0, handler: nil)
         }
 
     }

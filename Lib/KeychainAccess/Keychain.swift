@@ -131,7 +131,7 @@ public enum Accessibility {
     case AlwaysThisDeviceOnly
 }
 
-public struct AuthenticationPolicy : OptionSetType {
+public struct AuthenticationPolicy : OptionSet {
     /**
     User presence policy using Touch ID or Passcode. Touch ID does not 
     have to be available or enrolled. Item is still accessible by Touch ID
@@ -203,9 +203,9 @@ public struct AuthenticationPolicy : OptionSetType {
     @available(watchOS, unavailable)
     public static let ApplicationPassword = AuthenticationPolicy(rawValue: 1 << 31)
 
-    public let rawValue : Int
+    public let rawValue: UInt
 
-    public init(rawValue:Int) {
+    public init(rawValue: UInt) {
         self.rawValue = rawValue
     }
 }
@@ -214,14 +214,14 @@ public struct Attributes {
     public var `class`: String? {
         return attributes[Class] as? String
     }
-    public var data: NSData? {
-        return attributes[ValueData] as? NSData
+    public var data: Data? {
+        return attributes[ValueData] as? Data
     }
-    public var ref: NSData? {
-        return attributes[ValueRef] as? NSData
+    public var ref: Data? {
+        return attributes[ValueRef] as? Data
     }
-    public var persistentRef: NSData? {
-        return attributes[ValuePersistentRef] as? NSData
+    public var persistentRef: Data? {
+        return attributes[ValuePersistentRef] as? Data
     }
 
     public var accessible: String? {
@@ -276,8 +276,8 @@ public struct Attributes {
     public var service: String? {
         return attributes[AttributeService] as? String
     }
-    public var generic: NSData? {
-        return attributes[AttributeGeneric] as? NSData
+    public var generic: Data? {
+        return attributes[AttributeGeneric] as? Data
     }
     public var securityDomain: String? {
         return attributes[AttributeSecurityDomain] as? String
@@ -370,7 +370,7 @@ public class Keychain {
     
     public convenience init() {
         var options = Options()
-        if let bundleIdentifier = NSBundle.mainBundle().bundleIdentifier {
+        if let bundleIdentifier = Bundle.main().bundleIdentifier {
             options.service = bundleIdentifier
         }
         self.init(options)
@@ -384,7 +384,7 @@ public class Keychain {
     
     public convenience init(accessGroup: String) {
         var options = Options()
-        if let bundleIdentifier = NSBundle.mainBundle().bundleIdentifier {
+        if let bundleIdentifier = Bundle.main().bundleIdentifier {
             options.service = bundleIdentifier
         }
         options.accessGroup = accessGroup
@@ -417,7 +417,7 @@ public class Keychain {
     
     // MARK:
     
-    public func accessibility(accessibility: Accessibility) -> Keychain {
+    public func accessibility(_ accessibility: Accessibility) -> Keychain {
         var options = self.options
         options.accessibility = accessibility
         return Keychain(options)
@@ -425,32 +425,32 @@ public class Keychain {
 
     @available(iOS 8.0, OSX 10.10, *)
     @available(watchOS, unavailable)
-    public func accessibility(accessibility: Accessibility, authenticationPolicy: AuthenticationPolicy) -> Keychain {
+    public func accessibility(_ accessibility: Accessibility, authenticationPolicy: AuthenticationPolicy) -> Keychain {
         var options = self.options
         options.accessibility = accessibility
         options.authenticationPolicy = authenticationPolicy
         return Keychain(options)
     }
     
-    public func synchronizable(synchronizable: Bool) -> Keychain {
+    public func synchronizable(_ synchronizable: Bool) -> Keychain {
         var options = self.options
         options.synchronizable = synchronizable
         return Keychain(options)
     }
     
-    public func label(label: String) -> Keychain {
+    public func label(_ label: String) -> Keychain {
         var options = self.options
         options.label = label
         return Keychain(options)
     }
     
-    public func comment(comment: String) -> Keychain {
+    public func comment(_ comment: String) -> Keychain {
         var options = self.options
         options.comment = comment
         return Keychain(options)
     }
 
-    public func attributes(attributes: [String: AnyObject]) -> Keychain {
+    public func attributes(_ attributes: [String: AnyObject]) -> Keychain {
         var options = self.options
         attributes.forEach { options.attributes.updateValue($1, forKey: $0) }
         return Keychain(options)
@@ -458,7 +458,7 @@ public class Keychain {
 
     @available(iOS 8.0, OSX 10.10, *)
     @available(watchOS, unavailable)
-    public func authenticationPrompt(authenticationPrompt: String) -> Keychain {
+    public func authenticationPrompt(_ authenticationPrompt: String) -> Keychain {
         var options = self.options
         options.authenticationPrompt = authenticationPrompt
         return Keychain(options)
@@ -467,20 +467,20 @@ public class Keychain {
     // MARK:
     
     public func get(key: String) throws -> String? {
-        return try getString(key)
+        return try getString(key: key)
     }
     
     public func getString(key: String) throws -> String? {
-        guard let data = try getData(key) else  {
+        guard let data = try getData(key: key) else  {
             return nil
         }
-        guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) as? String else {
+        guard let string = String(data: data, encoding: .utf8) else {
             throw conversionError(message: "failed to convert data to string")
         }
         return string
     }
 
-    public func getData(key: String) throws -> NSData? {
+    public func getData(key: String) throws -> Data? {
         var query = options.query()
 
         query[MatchLimit] = MatchLimitOne
@@ -493,7 +493,7 @@ public class Keychain {
 
         switch status {
         case errSecSuccess:
-            guard let data = result as? NSData else {
+            guard let data = result as? Data else {
                 throw Status.UnexpectedError
             }
             return data
@@ -504,7 +504,7 @@ public class Keychain {
         }
     }
 
-    public func get<T>(key: String, @noescape handler: Attributes? -> T) throws -> T {
+    public func get<T>(key: String, handler: @noescape(Attributes?) -> T) throws -> T {
         var query = options.query()
 
         query[MatchLimit] = MatchLimitOne
@@ -535,13 +535,13 @@ public class Keychain {
     // MARK:
     
     public func set(value: String, key: String) throws {
-        guard let data = value.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false) else {
+        guard let data = value.data(using: .utf8, allowLossyConversion: false) else {
             throw conversionError(message: "failed to convert string to data")
         }
-        try set(data, key: key)
+        try set(value: data, key: key)
     }
     
-    public func set(value: NSData, key: String) throws {
+    public func set(value: Data, key: String) throws {
         var query = options.query()
         query[AttributeAccount] = key
         #if os(iOS)
@@ -572,8 +572,8 @@ public class Keychain {
 
             #if os(iOS)
             if status == errSecInteractionNotAllowed && floor(NSFoundationVersionNumber) <= floor(NSFoundationVersionNumber_iOS_8_0) {
-                try remove(key)
-                try set(value, key: key)
+                try remove(key: key)
+                try set(value: value, key: key)
             } else {
                 status = SecItemUpdate(query, attributes)
                 if status != errSecSuccess {
@@ -606,17 +606,17 @@ public class Keychain {
 
     public subscript(key: String) -> String? {
         get {
-            return (try? get(key)).flatMap { $0 }
+            return (try? get(key: key)).flatMap { $0 }
         }
 
         set {
             if let value = newValue {
                 do {
-                    try set(value, key: key)
+                    try set(value: value, key: key)
                 } catch {}
             } else {
                 do {
-                    try remove(key)
+                    try remove(key: key)
                 } catch {}
             }
         }
@@ -632,19 +632,19 @@ public class Keychain {
         }
     }
 
-    public subscript(data key: String) -> NSData? {
+    public subscript(data key: String) -> Data? {
         get {
-            return (try? getData(key)).flatMap { $0 }
+            return (try? getData(key: key)).flatMap { $0 }
         }
 
         set {
             if let value = newValue {
                 do {
-                    try set(value, key: key)
+                    try set(value: value, key: key)
                 } catch {}
             } else {
                 do {
-                    try remove(key)
+                    try remove(key: key)
                 } catch {}
             }
         }
@@ -652,7 +652,7 @@ public class Keychain {
 
     public subscript(attributes key: String) -> Attributes? {
         get {
-            return (try? get(key) { $0 }).flatMap { $0 }
+            return (try? get(key: key) { $0 }).flatMap { $0 }
         }
     }
     
@@ -726,7 +726,7 @@ public class Keychain {
         default: ()
         }
         
-        securityError(status: status)
+        let _ = securityError(status: status)
         return []
     }
     
@@ -756,7 +756,7 @@ public class Keychain {
         default: ()
         }
         
-        securityError(status: status)
+        let _ = securityError(status: status)
         return []
     }
     
@@ -809,7 +809,7 @@ public class Keychain {
     #if os(iOS)
     @available(iOS 8.0, *)
     public func setSharedPassword(password: String, account: String, completion: (error: NSError?) -> () = { e -> () in }) {
-        setSharedPassword(password as String?, account: account, completion: completion)
+        setSharedPassword(password: password as String?, account: account, completion: completion)
     }
     #endif
 
@@ -834,7 +834,7 @@ public class Keychain {
     #if os(iOS)
     @available(iOS 8.0, *)
     public func removeSharedPassword(account: String, completion: (error: NSError?) -> () = { e -> () in }) {
-        setSharedPassword(nil, account: account, completion: completion)
+        setSharedPassword(password: nil, account: account, completion: completion)
     }
     #endif
 
@@ -847,21 +847,21 @@ public class Keychain {
 
     #if os(iOS)
     @available(iOS 8.0, *)
-    public class func requestSharedWebCredential(domain domain: String, completion: (credentials: [[String: String]], error: NSError?) -> () = { credentials, error -> () in }) {
+    public class func requestSharedWebCredential(domain: String, completion: (credentials: [[String: String]], error: NSError?) -> () = { credentials, error -> () in }) {
         requestSharedWebCredential(domain: domain, account: nil, completion: completion)
     }
     #endif
 
     #if os(iOS)
     @available(iOS 8.0, *)
-    public class func requestSharedWebCredential(domain domain: String, account: String, completion: (credentials: [[String: String]], error: NSError?) -> () = { credentials, error -> () in }) {
+    public class func requestSharedWebCredential(domain: String, account: String, completion: (credentials: [[String: String]], error: NSError?) -> () = { credentials, error -> () in }) {
         requestSharedWebCredential(domain: Optional(domain), account: Optional(account), completion: completion)
     }
     #endif
 
     #if os(iOS)
     @available(iOS 8.0, *)
-    private class func requestSharedWebCredential(domain domain: String?, account: String?, completion: (credentials: [[String: String]], error: NSError?) -> ()) {
+    private class func requestSharedWebCredential(domain: String?, account: String?, completion: (credentials: [[String: String]], error: NSError?) -> ()) {
         SecRequestSharedWebCredential(domain, account) { (credentials, error) -> () in
             var remoteError: NSError?
             if let error = error {
@@ -926,11 +926,11 @@ public class Keychain {
         default: ()
         }
         
-        securityError(status: status)
+        let _ = securityError(status: status)
         return []
     }
     
-    private class func prettify(itemClass itemClass: ItemClass, items: [[String: AnyObject]]) -> [[String: AnyObject]] {
+    private class func prettify(itemClass: ItemClass, items: [[String: AnyObject]]) -> [[String: AnyObject]] {
         let items = items.map { attributes -> [String: AnyObject] in
             var item = [String: AnyObject]()
             
@@ -963,8 +963,8 @@ public class Keychain {
             if let key = attributes[AttributeAccount] as? String {
                 item["key"] = key
             }
-            if let data = attributes[ValueData] as? NSData {
-                if let text = NSString(data: data, encoding: NSUTF8StringEncoding) as? String {
+            if let data = attributes[ValueData] as? Data {
+                if let text = String(data: data, encoding: .utf8) {
                     item["value"] = text
                 } else  {
                     item["value"] = data
@@ -987,18 +987,18 @@ public class Keychain {
     
     // MARK:
     
-    private class func conversionError(message message: String) -> NSError {
+    private class func conversionError(message: String) -> NSError {
         let error = NSError(domain: KeychainAccessErrorDomain, code: Int(Status.ConversionError.rawValue), userInfo: [NSLocalizedDescriptionKey: message])
         print("error:[\(error.code)] \(error.localizedDescription)")
         
         return error
     }
     
-    private func conversionError(message message: String) -> NSError {
+    private func conversionError(message: String) -> NSError {
         return self.dynamicType.conversionError(message: message)
     }
     
-    private class func securityError(status status: OSStatus) -> NSError {
+    private class func securityError(status: OSStatus) -> NSError {
         let message = Status(status: status).description
         
         let error = NSError(domain: KeychainAccessErrorDomain, code: Int(status), userInfo: [NSLocalizedDescriptionKey: message])
@@ -1007,7 +1007,7 @@ public class Keychain {
         return error
     }
     
-    private func securityError(status status: OSStatus) -> NSError {
+    private func securityError(status: OSStatus) -> NSError {
         return self.dynamicType.securityError(status: status)
     }
 }
@@ -1088,7 +1088,7 @@ private let ValuePersistentRef = String(kSecValuePersistentRef)
 private let UseOperationPrompt = String(kSecUseOperationPrompt)
 
 #if os(iOS)
-@available(iOS, introduced=8.0, deprecated=9.0, message="Use a UseAuthenticationUI instead.")
+@available(iOS, introduced:8.0, deprecated:9.0, message:"Use a UseAuthenticationUI instead.")
 private let UseNoAuthenticationUI = String(kSecUseNoAuthenticationUI)
 #endif
 
@@ -1170,7 +1170,7 @@ extension Options {
         return query
     }
     
-    func attributes(key key: String?, value: NSData) -> ([String: AnyObject], NSError?) {
+    func attributes(key: String?, value: Data) -> ([String: AnyObject], NSError?) {
         var attributes: [String: AnyObject]
         
         if key != nil {
@@ -1626,7 +1626,7 @@ extension CFError {
     }
 }
 
-public enum Status : OSStatus, ErrorType {
+public enum Status : OSStatus, ErrorProtocol {
     case Success                            = 0
     case Unimplemented                      = -4
     case DiskFull                           = -34
