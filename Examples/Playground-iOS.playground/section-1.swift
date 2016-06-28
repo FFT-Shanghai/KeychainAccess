@@ -25,7 +25,7 @@ keychain = Keychain(server: URL, protocolType: .HTTPS)
 keychain["kishikawakatsumi"] = "01234567-89ab-cdef-0123-456789abcdef"
 
 /* set method */
-try! keychain.set("01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
+try! keychain.set(value: "01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
 
 
 /*****************
@@ -39,11 +39,11 @@ token = keychain["kishikawakatsumi"]
 /* get method */
 
 // as String
-token = try! keychain.get("kishikawakatsumi")
-token = try! keychain.getString("kishikawakatsumi")
+token = try! keychain.get(key: "kishikawakatsumi")
+token = try! keychain.getString(key: "kishikawakatsumi")
 
 // as Data
-let data = try! keychain.getData("kishikawakatsumi")
+let data = try! keychain.getData(key: "kishikawakatsumi")
 
 /****************
  * Removing items
@@ -53,7 +53,7 @@ let data = try! keychain.getData("kishikawakatsumi")
 keychain["kishikawakatsumi"] = nil
 
 /* remove method */
-try! keychain.remove("kishikawakatsumi")
+try! keychain.remove(key: "kishikawakatsumi")
 
 
 /****************
@@ -62,7 +62,7 @@ try! keychain.remove("kishikawakatsumi")
 
 /* set */
 do {
-    try keychain.set("01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
+    try keychain.set(value: "01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
 } catch let error as NSError {
     print("error: \(error.localizedDescription)")
 }
@@ -70,14 +70,14 @@ do {
 /* get */
 // First, get the failable (value or error) object
 do {
-    let token = try keychain.get("kishikawakatsumi")
+    let token = try keychain.get(key: "kishikawakatsumi")
 } catch let error as NSError {
     print("error: \(error.localizedDescription)")
 }
 
 /* remove */
 do {
-    try keychain.remove("kishikawakatsumi")
+    try keychain.remove(key: "kishikawakatsumi")
 } catch let error as NSError {
     print("error: \(error.localizedDescription)")
 }
@@ -116,11 +116,11 @@ let iCloud = Keychain(service: "com.example.github-token")
 try! keychain
     .accessibility(.AfterFirstUnlock)
     .synchronizable(true)
-    .set("01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
+    .set(value: "01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
 
 try! keychain
     .accessibility(.WhenUnlocked)
-    .set("01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
+    .set(value: "01234567-89ab-cdef-0123-456789abcdef", key: "kishikawakatsumi")
 
 
 /***********
